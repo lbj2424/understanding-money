@@ -1,1 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Money Growth Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: clamp(1.3rem, 5vw, 2rem);
+      font-weight: 700;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    /* --- Inputs --- */
+    .inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 600px;
+      margin: 0 auto 14px;
+    }
+
+    .input-group {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .input-prefix {
+      color: #38bdf8;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .input-group input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #f1f5f9;
+      font-size: 1.3rem;
+      font-weight: 700;
+      width: 100%;
+    }
+
+    .input-group input::placeholder { color: #475569; }
+
+    /* --- Calculate button --- */
+    .calc-btn {
+      display: block;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 28px;
+      padding: 15px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      border: none;
+      border-radius: 14px;
+      color: #0f172a;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.03em;
+    }
+
+    .calc-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* --- Results section --- */
+    #results { display: none; }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+      padding-left: 2px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* --- Cards --- */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 800px;
+      margin: 0 auto 28px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .card.cu::before   { background: #94a3b8; }
+    .card.hysa::before { background: #34d399; }
+    .card.brok::before { background: #f59e0b; }
+    .card.roth::before { background: #818cf8; }
+
+    .card-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+
+    .card.cu .card-label   { color: #94a3b8; }
+    .card.hysa .card-label { color: #34d399; }
+    .card.brok .card-label { color: #f59e0b; }
+    .card.roth .card-label { color: #818cf8; }
+
+    .card-rate {
+      font-size: 0.72rem;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .card-amount {
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .card-detail {
+      font-size: 0.72rem;
+      color: #64748b;
+      line-height: 1.7;
+      border-top: 1px solid #334155;
+      padding-top: 8px;
+    }
+
+    .tax-bad  { color: #f87171; }
+    .tax-good { color: #34d399; }
+    .tax-note { color: #94a3b8; }
+
+    /* --- Chart --- */
+    .chart-wrap {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 16px;
+      max-width: 800px;
+      margin: 0 auto 24px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+    }
+
+    /* --- Assumptions box --- */
+    .assumptions {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 14px 16px;
+      max-width: 800px;
+      margin: 0 auto 32px;
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.9;
+    }
+
+    .assumptions strong { color: #94a3b8; }
+
+    /* --- Roth warning --- */
+    .roth-warning {
+      background: #1e1a2e;
+      border: 1px solid #4c1d95;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      color: #a78bfa;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    /* Mobile: stack to 1 column on very small screens */
+    @media (max-width: 380px) {
+      .inputs { grid-template-columns: 1fr; }
+      .cards  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Money Growth Calculator</h1>
+  <p class="subtitle">See how your savings grow to age 60 across 4 account types</p>
+
+  <div class="inputs">
+    <div class="input-group">
+      <label>Monthly Contribution</label>
+      <div class="input-wrapper">
+        <span class="input-prefix">$</span>
+        <input type="number" id="monthly" placeholder="500" min="1" inputmode="decimal" />
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Your Current Age</label>
+      <div class="input-wrapper">
+        <input type="number" id="age" placeholder="25" min="1" max="59" inputmode="numeric" />
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">Calculate My Growth</button>
+
+  <div id="results">
+
+    <p class="section-title">Balance at Age 60 &mdash; Net of Taxes</p>
+
+    <div class="cards">
+      <div class="card cu">
+        <div class="card-label">Credit Union Savings</div>
+        <div class="card-rate">0.02% APY</div>
+        <div class="card-amount" id="cu-amount">—</div>
+        <div class="card-detail" id="cu-detail"></div>
+      </div>
+      <div class="card hysa">
+        <div class="card-label">High-Yield Savings</div>
+        <div class="card-rate">3.25% APY</div>
+        <div class="card-amount" id="hysa-amount">—</div>
+        <div class="card-detail" id="hysa-detail"></div>
+      </div>
+      <div class="card brok">
+        <div class="card-label">Stock Market (Brokerage)</div>
+        <div class="card-rate">~9% avg. annual return</div>
+        <div class="card-amount" id="brok-amount">—</div>
+        <div class="card-detail" id="brok-detail"></div>
+      </div>
+      <div class="card roth">
+        <div class="card-label">Roth IRA</div>
+        <div class="card-rate">~9% avg. annual return</div>
+        <div class="card-amount" id="roth-amount">—</div>
+        <div class="card-detail" id="roth-detail"></div>
+        <div class="roth-warning" id="roth-warning" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <p class="section-title" style="margin-bottom:12px;">Growth Over Time</p>
+      <div class="chart-container">
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+
+    <div class="assumptions">
+      <strong>Assumptions &amp; Notes</strong><br>
+      &bull; Starting balance: $0 &nbsp;&bull;&nbsp; Contributions begin immediately<br>
+      &bull; Assumed income tax rate: 22% — savings interest taxed annually<br>
+      &bull; Assumed long-term capital gains rate: 15% — brokerage taxed at withdrawal<br>
+      &bull; Roth IRA: contributions are post-tax; growth &amp; withdrawals are <span class="tax-good">tax-free</span><br>
+      &bull; Roth IRA 2024 limit: $7,000/yr ($583/mo). Extra goes to brokerage instead.<br>
+      &bull; 9% stock market return is a historical average &mdash; actual returns vary year to year<br>
+      &bull; This is a simplified model, not financial advice. Consult a financial advisor.
+    </div>
+
+  </div>
+
+  <script>
+    const INCOME_TAX  = 0.22;
+    const CAP_GAINS   = 0.15;
+    const ROTH_LIMIT  = 7000 / 12; // monthly IRS max
+
+    let chartInstance = null;
+
+    function fmt(n) {
+      return '$' + Math.round(n).toLocaleString();
+    }
+
+    function calculate() {
+      const monthly = parseFloat(document.getElementById('monthly').value);
+      const age     = parseFloat(document.getElementById('age').value);
+
+      if (!monthly || monthly <= 0 || !age || age < 1 || age >= 60) {
+        alert('Please enter a valid monthly amount and an age between 1 and 59.');
+        return;
+      }
+
+      const years  = 60 - age;
+      const months = years * 12;
+
+      const rothMonthly = Math.min(monthly, ROTH_LIMIT);
+      const rothCapped  = monthly > ROTH_LIMIT;
+
+      // Balances
+      let cu = 0, hysa = 0, brok = 0, roth = 0;
+      let totalBrokContrib = 0, totalRothContrib = 0;
+
+      // Monthly rates — savings use after-tax effective rate to model annual tax drag
+      const cuR   = (0.0002 * (1 - INCOME_TAX)) / 12;
+      const hysaR = (0.0325 * (1 - INCOME_TAX)) / 12;
+      const brokR = 0.09 / 12;
+      const rothR = 0.09 / 12;
+
+      // Yearly snapshots
+      const labels = [];
+      const cuArr = [], hysaArr = [], brokArr = [], rothArr = [];
+
+      for (let m = 1; m <= months; m++) {
+        cu   = (cu   + monthly)     * (1 + cuR);
+        hysa = (hysa + monthly)     * (1 + hysaR);
+        brok = (brok + monthly)     * (1 + brokR);
+        roth = (roth + rothMonthly) * (1 + rothR);
+
+        totalBrokContrib += monthly;
+        totalRothContrib += rothMonthly;
+
+        if (m % 12 === 0) {
+          labels.push('Age ' + (age + m / 12));
+          cuArr.push(+cu.toFixed(2));
+          hysaArr.push(+hysa.toFixed(2));
+          brokArr.push(+brok.toFixed(2));
+          rothArr.push(+roth.toFixed(2));
+        }
+      }
+
+      // Brokerage: cap gains tax on gains at withdrawal
+      const brokGains = brok - totalBrokContrib;
+      const brokTax   = Math.max(0, brokGains * CAP_GAINS);
+      const brokNet   = brok - brokTax;
+
+      // Approx taxes already paid on savings (difference between pre- and post-tax growth)
+      const cuTaxPaid   = Math.round(cu   / (1 - INCOME_TAX) - cu);
+      const hysaTaxPaid = Math.round(hysa / (1 - INCOME_TAX) - hysa);
+
+      // Update cards
+      document.getElementById('cu-amount').textContent   = fmt(cu);
+      document.getElementById('hysa-amount').textContent = fmt(hysa);
+      document.getElementById('brok-amount').textContent = fmt(brokNet);
+      document.getElementById('roth-amount').textContent = fmt(roth);
+
+      document.getElementById('cu-detail').innerHTML =
+        `<span class="tax-note">~${fmt(cuTaxPaid)} paid in taxes over ${years} yrs</span><br>
+         Interest taxed as ordinary income annually`;
+
+      document.getElementById('hysa-detail').innerHTML =
+        `<span class="tax-note">~${fmt(hysaTaxPaid)} paid in taxes over ${years} yrs</span><br>
+         Interest taxed as ordinary income annually`;
+
+      document.getElementById('brok-detail').innerHTML =
+        `Gross: ${fmt(brok)}<br>
+         <span class="tax-bad">Cap. gains tax at withdrawal: &minus;${fmt(brokTax)}</span><br>
+         Total contributed: ${fmt(totalBrokContrib)}`;
+
+      document.getElementById('roth-detail').innerHTML =
+        `Total contributed: ${fmt(totalRothContrib)}<br>
+         <span class="tax-good">Growth &amp; withdrawals: tax-free</span>`;
+
+      const warn = document.getElementById('roth-warning');
+      if (rothCapped) {
+        warn.style.display = 'block';
+        const extra = Math.round((monthly - ROTH_LIMIT) * 12).toLocaleString();
+        warn.textContent = `Contribution capped at $7,000/yr (IRS limit). Extra $${extra}/yr modeled in the brokerage account instead.`;
+      } else {
+        warn.style.display = 'none';
+      }
+
+      // Chart
+      if (chartInstance) chartInstance.destroy();
+
+      const ctx = document.getElementById('myChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Credit Union (0.02%)',
+              data: cuArr,
+              borderColor: '#94a3b8',
+              backgroundColor: 'rgba(148,163,184,0.06)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4,
+              fill: false,
+            },
+            {
+              label: 'HYSA (3.25%)',
+              data: hysaArr,
+              borderColor: '#34d399',
+              backgroundColor: 'rgba(52,211,153,0.06)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4,
+              fill: false,
+            },
+            {
+              label: 'Brokerage (~9%)',
+              data: brokArr,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245,158,11,0.06)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4,
+              fill: false,
+            },
+            {
+              label: 'Roth IRA (~9%)',
+              data: rothArr,
+              borderColor: '#818cf8',
+              backgroundColor: 'rgba(129,140,248,0.1)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.4,
+              fill: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: { size: 11 },
+                boxWidth: 14,
+                padding: 10,
+              },
+            },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              borderColor: '#334155',
+              borderWidth: 1,
+              titleColor: '#e2e8f0',
+              bodyColor: '#94a3b8',
+              callbacks: {
+                label(ctx) {
+                  return ' ' + ctx.dataset.label + ': $' + Math.round(ctx.parsed.y).toLocaleString();
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#475569',
+                font: { size: 10 },
+                maxTicksLimit: 8,
+                maxRotation: 0,
+              },
+              grid: { color: 'rgba(255,255,255,0.03)' },
+            },
+            y: {
+              ticks: {
+                color: '#475569',
+                font: { size: 10 },
+                callback(v) {
+                  if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
+                  if (v >= 1000)    return '$' + (v / 1000).toFixed(0) + 'k';
+                  return '$' + v;
+                },
+              },
+              grid: { color: 'rgba(255,255,255,0.05)' },
+            },
+          },
+        },
+      });
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+  </script>
+</body>
+</html>
