@@ -406,9 +406,7 @@
          <div class="breakdown">
            <span>Interest earned (after tax)</span><span class="tax-good">${fmt(cuGains)}</span>
          </div>
-         <div class="breakdown tax-note" style="font-size:0.68rem;margin-top:2px;">
-           <span>~${fmt(cuTaxPaid)} paid in taxes over ${years} yrs</span>
-         </div>`;
+         <div class="tax-note" style="font-size:0.68rem;margin-top:4px;">~${fmt(cuTaxPaid)} paid in taxes over ${years} yrs</div>`;
 
       document.getElementById('hysa-detail').innerHTML =
         `<div class="breakdown">
@@ -417,9 +415,7 @@
          <div class="breakdown">
            <span>Interest earned (after tax)</span><span class="tax-good">${fmt(hysaGains)}</span>
          </div>
-         <div class="breakdown tax-note" style="font-size:0.68rem;margin-top:2px;">
-           <span>~${fmt(hysaTaxPaid)} paid in taxes over ${years} yrs</span>
-         </div>`;
+         <div class="tax-note" style="font-size:0.68rem;margin-top:4px;">~${fmt(hysaTaxPaid)} paid in taxes over ${years} yrs</div>`;
 
       document.getElementById('brok-detail').innerHTML =
         `<div class="breakdown">
@@ -428,9 +424,7 @@
          <div class="breakdown">
            <span>Growth (after 15% cap. gains)</span><span class="tax-good">${fmt(brokNetGains)}</span>
          </div>
-         <div class="breakdown tax-bad" style="font-size:0.68rem;margin-top:2px;">
-           <span>Tax owed at withdrawal: &minus;${fmt(brokTax)}</span>
-         </div>`;
+         <div class="tax-bad" style="font-size:0.68rem;margin-top:4px;">Tax owed at withdrawal: &minus;${fmt(brokTax)}</div>`;
 
       document.getElementById('roth-detail').innerHTML =
         `<div class="breakdown">
