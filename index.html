@@ -186,6 +186,15 @@
     .tax-good { color: #34d399; }
     .tax-note { color: #94a3b8; }
 
+    .breakdown {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .breakdown span:last-child { font-weight: 600; white-space: nowrap; }
+
     /* --- Chart --- */
     .chart-wrap {
       background: #1e293b;
@@ -339,6 +348,8 @@
       // Balances
       let cu = 0, hysa = 0, brok = 0, roth = 0;
       let totalBrokContrib = 0, totalRothContrib = 0;
+      const totalCuContrib   = monthly * months;
+      const totalHysaContrib = monthly * months;
 
       // Monthly rates — savings use after-tax effective rate to model annual tax drag
       const cuR   = (0.0002 * (1 - INCOME_TAX)) / 12;
@@ -383,22 +394,51 @@
       document.getElementById('brok-amount').textContent = fmt(brokNet);
       document.getElementById('roth-amount').textContent = fmt(roth);
 
+      const cuGains   = cu   - totalCuContrib;
+      const hysaGains = hysa - totalHysaContrib;
+      const brokNetGains = brokNet - totalBrokContrib;
+      const rothGains = roth - totalRothContrib;
+
       document.getElementById('cu-detail').innerHTML =
-        `<span class="tax-note">~${fmt(cuTaxPaid)} paid in taxes over ${years} yrs</span><br>
-         Interest taxed as ordinary income annually`;
+        `<div class="breakdown">
+           <span>Contributed</span><span>${fmt(totalCuContrib)}</span>
+         </div>
+         <div class="breakdown">
+           <span>Interest earned (after tax)</span><span class="tax-good">${fmt(cuGains)}</span>
+         </div>
+         <div class="breakdown tax-note" style="font-size:0.68rem;margin-top:2px;">
+           <span>~${fmt(cuTaxPaid)} paid in taxes over ${years} yrs</span>
+         </div>`;
 
       document.getElementById('hysa-detail').innerHTML =
-        `<span class="tax-note">~${fmt(hysaTaxPaid)} paid in taxes over ${years} yrs</span><br>
-         Interest taxed as ordinary income annually`;
+        `<div class="breakdown">
+           <span>Contributed</span><span>${fmt(totalHysaContrib)}</span>
+         </div>
+         <div class="breakdown">
+           <span>Interest earned (after tax)</span><span class="tax-good">${fmt(hysaGains)}</span>
+         </div>
+         <div class="breakdown tax-note" style="font-size:0.68rem;margin-top:2px;">
+           <span>~${fmt(hysaTaxPaid)} paid in taxes over ${years} yrs</span>
+         </div>`;
 
       document.getElementById('brok-detail').innerHTML =
-        `Gross: ${fmt(brok)}<br>
-         <span class="tax-bad">Cap. gains tax at withdrawal: &minus;${fmt(brokTax)}</span><br>
-         Total contributed: ${fmt(totalBrokContrib)}`;
+        `<div class="breakdown">
+           <span>Contributed</span><span>${fmt(totalBrokContrib)}</span>
+         </div>
+         <div class="breakdown">
+           <span>Growth (after 15% cap. gains)</span><span class="tax-good">${fmt(brokNetGains)}</span>
+         </div>
+         <div class="breakdown tax-bad" style="font-size:0.68rem;margin-top:2px;">
+           <span>Tax owed at withdrawal: &minus;${fmt(brokTax)}</span>
+         </div>`;
 
       document.getElementById('roth-detail').innerHTML =
-        `Total contributed: ${fmt(totalRothContrib)}<br>
-         <span class="tax-good">Growth &amp; withdrawals: tax-free</span>`;
+        `<div class="breakdown">
+           <span>Contributed</span><span>${fmt(totalRothContrib)}</span>
+         </div>
+         <div class="breakdown">
+           <span>Growth (tax-free)</span><span class="tax-good">${fmt(rothGains)}</span>
+         </div>`;
 
       const warn = document.getElementById('roth-warning');
       if (rothCapped) {
